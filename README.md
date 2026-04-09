@@ -1,6 +1,6 @@
 Start the Receiver
 
-go run . receiver
+"go run . receiver"
 
 - Starts a UDP server listening on port 9000
 - Receives incoming file packets
@@ -14,4 +14,4 @@ received_<original_filename>
 
 
 Send a File
-go run . sender <file-path>
+"go run . sender <file-path>"
