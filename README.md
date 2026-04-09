@@ -14,4 +14,4 @@ received_<original_filename>
 
 
 Send a File
-"go run . sender <file-path>"
+"go run . sender file-path"
