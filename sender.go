@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/md5"
 	"encoding/binary"
+	"fmt"
 	"net"
 	"os"
 	"path/filepath"
@@ -22,6 +23,7 @@ func SendFlow(path string, addr string) error {
 	chunks := BuildDataChunks(data, chunkSize)
 	packets := BuildPackets(id, name, chunks, md5)
 
+	fmt.Println("packets built:", len(packets))
 	err = Send(addr, packets)
 	if err != nil {
 		return err
@@ -143,6 +145,7 @@ func Send(addr string, packets [][]byte) error {
 
 	for _, packet := range packets {
 		_, err := connection.Write(packet)
+		fmt.Println("sending packet, bytes:", len(packet))
 		if err != nil {
 			return err
 		}

@@ -20,6 +20,7 @@ func ReceiveFlow(addr string) error {
 
 	for {
 		n, _, err := connection.ReadFrom(buffer)
+		fmt.Println("received packet, bytes:", n)
 		if err != nil {
 			return err
 		}
@@ -39,6 +40,7 @@ func ReceiveFlow(addr string) error {
 		}
 
 		err = session.AddPacket(packet)
+		fmt.Println("packet added to session:", id)
 		if err != nil {
 			return err
 		}
@@ -51,6 +53,7 @@ func ReceiveFlow(addr string) error {
 				return err
 			}
 
+			fmt.Println("session complete:", session.FileName)
 			err = SaveReceivedFile(session.FileName, fileData)
 			if err != nil {
 				return err
