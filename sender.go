@@ -10,9 +10,11 @@ import (
 	"time"
 )
 
-const chunkSize = 1200
+const chunkSize = 1400
 
 func SendFlow(path string, addr string) error {
+	start := time.Now()
+
 	data, name, err := ReadFileInBytes(path)
 	if err != nil {
 		return err
@@ -28,6 +30,11 @@ func SendFlow(path string, addr string) error {
 	if err != nil {
 		return err
 	}
+
+	// send timer
+	fmt.Println("file sent successfully:", name)
+	fmt.Println("send time:", time.Since(start))
+
 	return nil
 }
 
@@ -149,6 +156,8 @@ func Send(addr string, packets [][]byte) error {
 		if err != nil {
 			return err
 		}
+		time.Sleep(5 * time.Millisecond)
 	}
+
 	return nil
 }

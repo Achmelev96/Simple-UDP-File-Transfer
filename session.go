@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"crypto/md5"
 	"fmt"
+	"time"
 )
 
 type Session struct {
@@ -20,15 +21,19 @@ type Session struct {
 
 	FirstReceived bool
 
-	Pending map[uint32][]byte // before fist packet
+	Pending   map[uint32][]byte // before fist packet
+	LastSeen  time.Time         // timer for cleanup
+	StartTime time.Time         // timer for receiving
 }
 
 func NewSession(id uint16) *Session {
 	return &Session{
-		ID:       id,
-		Chunks:   make(map[uint32][]byte),
-		Received: make(map[uint32]bool),
-		Pending:  make(map[uint32][]byte),
+		ID:        id,
+		Chunks:    make(map[uint32][]byte),
+		Received:  make(map[uint32]bool),
+		Pending:   make(map[uint32][]byte),
+		LastSeen:  time.Now(),
+		StartTime: time.Now(),
 	}
 }
 
@@ -41,6 +46,7 @@ func (s *Session) AddPacket(packet []byte) error {
 	if s.ID != 0 && s.ID != id {
 		return fmt.Errorf("id problem: got %d, expected %d", id, s.ID)
 	}
+
 	if s.ID == 0 {
 		s.ID = id
 	}
@@ -49,6 +55,8 @@ func (s *Session) AddPacket(packet []byte) error {
 	if err != nil {
 		return err
 	}
+
+	s.LastSeen = time.Now() // update timer
 
 	// First
 	if seq == 0 {
@@ -130,7 +138,6 @@ func (s *Session) IsComplete() bool {
 			return false
 		}
 	}
-
 	return true
 }
 

@@ -27,7 +27,7 @@ package structure:
 		16 bytes - MD5
 	}
 */
-
+// добавить задержку
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Println("usage:")
@@ -53,7 +53,8 @@ func main() {
 		}
 
 		filePath := os.Args[2]
-		err := SendFlow(filePath, "10.0.0.103:9000")
+		err := SendFlow(filePath, "localhost:9000")
+
 		if err != nil {
 			fmt.Println("sender error:", err)
 			return
