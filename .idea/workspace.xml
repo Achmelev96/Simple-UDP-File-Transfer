@@ -4,12 +4,8 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="71f9d00b-be6e-4d02-9004-bacc31e0f758" name="Changes" comment="">
+    <list default="true" id="71f9d00b-be6e-4d02-9004-bacc31e0f758" name="Changes" comment="debugging msg">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/reciever.go" beforeDir="false" afterPath="$PROJECT_DIR$/reciever.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sender.go" beforeDir="false" afterPath="$PROJECT_DIR$/sender.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/testdata/test" beforeDir="false" afterPath="$PROJECT_DIR$/testdata/test" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -44,6 +40,9 @@
   &quot;fromUser&quot;: false
 }</component>
   <component name="ProjectId" id="3C2lrX4HGxYePbfWN5EJ5Vc43p0" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -62,12 +61,12 @@
     "RunOnceActivity.go.modules.go.list.on.any.changes.was.set": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "main",
+    "git-widget-placeholder": "Parallel-execution",
     "ignore.virus.scanning.warn.message": "true",
     "last_opened_file_path": "D:/Prj/go/my/SimpleUDPFileTransfer",
     "nodejs_package_manager_path": "npm",
     "onboarding.tips.debug.path": "D:/Prj/go/my/Simple UDP File Transfer/main.go",
-    "settings.editor.selected.configurable": "preferences.pluginManager"
+    "settings.editor.selected.configurable": "preferences.lookFeel"
   }
 }]]></component>
   <component name="RecentsManager">
@@ -78,8 +77,8 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-gosdk-72a9cf600ed8-3105c3b11fe0-org.jetbrains.plugins.go.sharedIndexes.bundled-GO-261.22158.291" />
-        <option value="bundled-js-predefined-d6986cc7102b-3bd3a6803838-JavaScript-GO-261.22158.291" />
+        <option value="bundled-gosdk-72a9cf600ed8-3dd3895e5e08-org.jetbrains.plugins.go.sharedIndexes.bundled-GO-261.23567.143" />
+        <option value="bundled-js-predefined-d6986cc7102b-31caf2ab9e3c-JavaScript-GO-261.23567.143" />
       </set>
     </attachedChunks>
   </component>
@@ -91,9 +90,22 @@
       <option name="presentableId" value="Default" />
       <updated>1775591744587</updated>
     </task>
+    <task id="LOCAL-00001" summary="debugging msg">
+      <option name="closed" value="true" />
+      <created>1775774204941</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1775774204941</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="debugging msg" />
+    <option name="LAST_COMMIT_MESSAGE" value="debugging msg" />
   </component>
 </project>
