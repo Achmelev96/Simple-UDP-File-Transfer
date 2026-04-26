@@ -6,10 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="71f9d00b-be6e-4d02-9004-bacc31e0f758" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/reciever.go" beforeDir="false" afterPath="$PROJECT_DIR$/reciever.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sender.go" beforeDir="false" afterPath="$PROJECT_DIR$/sender.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/testdata/test" beforeDir="false" afterPath="$PROJECT_DIR$/testdata/test" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -44,6 +41,9 @@
   &quot;fromUser&quot;: false
 }</component>
   <component name="ProjectId" id="3C2lrX4HGxYePbfWN5EJ5Vc43p0" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -64,13 +64,16 @@
     "codeWithMe.voiceChat.enabledByDefault": "false",
     "git-widget-placeholder": "main",
     "ignore.virus.scanning.warn.message": "true",
-    "last_opened_file_path": "D:/Prj/go/my/SimpleUDPFileTransfer",
+    "last_opened_file_path": "D:/Prj/go/my/SimpleUDPFileTransfer/docs",
     "nodejs_package_manager_path": "npm",
     "onboarding.tips.debug.path": "D:/Prj/go/my/Simple UDP File Transfer/main.go",
     "settings.editor.selected.configurable": "preferences.pluginManager"
   }
 }]]></component>
   <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\Prj\go\my\SimpleUDPFileTransfer\docs" />
+    </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="D:\Prj\go\my\Simple UDP File Transfer" />
     </key>

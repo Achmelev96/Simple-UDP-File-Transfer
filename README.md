@@ -1,17 +1,44 @@
-Start the Receiver
+# Simple UDP File Transfer
 
-"go run . receiver"
+A simple UDP-based file transfer application with support for parallel file assembly using goroutines.
 
-- Starts a UDP server listening on port 9000
-- Receives incoming file packets
-- Reassembles the file and saves it locally
+---
 
-*:
+## Start the Receiver
+
+```bash
+go run . receiver
+```
+
+Starts a UDP server listening on port 9000
+Receives incoming file packets
+Reassembles files in parallel and saves them locally
+
 The receiver expects a folder named testdata in the project root.
 All received files will be saved there with the prefix:
 
-received_<original_filename>
+rec_<original_filename>
 
+## Receiver Flow
 
-Send a File
-"go run . sender file-path"
+The receiver processes incoming UDP packets and distributes them into sessions based on their transmission ID.
+Each session collects packets until the file is complete.
+
+Once a session is complete, it is passed to a separate worker (goroutine),
+which rebuilds the file, validates its integrity (MD5), and saves it to disk.
+
+Meanwhile, the receiver continues processing incoming packets without blocking.
+
+<p align="center"> <img src="docs/receiverFlow.png" width="800"/> </p>
+
+## Send a File
+
+```bash
+go run . sender file-path
+```
+
+Example:
+```bash
+go run . sender testdata/example.txt
+```
+
