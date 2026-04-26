@@ -31,8 +31,10 @@ func ReceiveFlow(addr string) error {
 				case result := <-doneChan:
 					if result.OK {
 						fmt.Println("file received successfully, id:", result.ID)
+						fmt.Println("receive time:", result.Duration)
 					} else {
 						fmt.Println("file assembly failed, id:", result.ID, "error:", result.Err)
+						fmt.Println("receive time before failure:", result.Duration)
 					}
 
 					delete(statuses, result.ID)

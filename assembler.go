@@ -3,17 +3,20 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"time"
 )
 
 type AssembleResult struct {
-	ID  uint16
-	OK  bool
-	Err error
+	ID       uint16
+	OK       bool
+	Duration time.Duration
+	Err      error
 }
 
-// Validates the file, compiles it, and saves it
+// AssembleAndSave Validates the file, compiles it, and saves it
 // Once everything is completed successfully, it notifies the channel about it
 func AssembleAndSave(session *Session, done chan<- AssembleResult) {
+	duration := time.Since(session.StartTime)
 	fileData := session.BuildFile()
 
 	err := session.ValidateMD5(fileData)
@@ -37,14 +40,15 @@ func AssembleAndSave(session *Session, done chan<- AssembleResult) {
 	}
 
 	done <- AssembleResult{
-		ID:  session.ID,
-		OK:  true,
-		Err: err,
+		ID:       session.ID,
+		OK:       true,
+		Duration: duration,
+		Err:      err,
 	}
 }
 
 func SaveReceivedFile(fileName string, data []byte) error {
 	baseName := filepath.Base(fileName)
-	outputName := filepath.Join("testdata", "received_"+baseName)
+	outputName := filepath.Join("testdata", "rec_"+baseName)
 	return os.WriteFile(outputName, data, 0644)
 }

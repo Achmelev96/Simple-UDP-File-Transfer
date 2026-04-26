@@ -21,17 +21,19 @@ type Session struct {
 
 	FirstReceived bool
 
-	Pending  map[uint32][]byte // before fist packet
-	LastSeen time.Time         // timer for cleanup
+	Pending   map[uint32][]byte // before fist packet
+	LastSeen  time.Time         // timer for cleanup
+	StartTime time.Time         // timer for receiving
 }
 
 func NewSession(id uint16) *Session {
 	return &Session{
-		ID:       id,
-		Chunks:   make(map[uint32][]byte),
-		Received: make(map[uint32]bool),
-		Pending:  make(map[uint32][]byte),
-		LastSeen: time.Now(),
+		ID:        id,
+		Chunks:    make(map[uint32][]byte),
+		Received:  make(map[uint32]bool),
+		Pending:   make(map[uint32][]byte),
+		LastSeen:  time.Now(),
+		StartTime: time.Now(),
 	}
 }
 
