@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const chunkSize = 1200
+const chunkSize = 1400
 
 func SendFlow(path string, addr string) error {
 	data, name, err := ReadFileInBytes(path)
