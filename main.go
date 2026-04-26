@@ -53,7 +53,7 @@ func main() {
 		}
 
 		filePath := os.Args[2]
-		err := SendFlow(filePath, "141.201.140.40:9000")
+		err := SendFlow(filePath, "localhost:9000")
 		if err != nil {
 			fmt.Println("sender error:", err)
 			return

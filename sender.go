@@ -149,6 +149,8 @@ func Send(addr string, packets [][]byte) error {
 		if err != nil {
 			return err
 		}
+		time.Sleep(5 * time.Millisecond)
 	}
+
 	return nil
 }
