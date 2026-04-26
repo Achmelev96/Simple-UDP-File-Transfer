@@ -1,4 +1,4 @@
-Start the Receiver
+## Start the Receiver
 
 "go run . receiver"
 
@@ -12,6 +12,14 @@ All received files will be saved there with the prefix:
 received_<original_filename>
 
 ## Receiver Flow
+
+The receiver processes incoming UDP packets and distributes them into sessions based on their transmission ID.  
+Each session collects packets until the file is complete.  
+
+Once a session is complete, it is passed to a separate worker (goroutine),  
+which rebuilds the file, validates its integrity (MD5), and saves it to disk.  
+
+Meanwhile, the receiver continues processing incoming packets without blocking.
 
 ![Receiver Flow](docs/receiver-flow.png)
 
