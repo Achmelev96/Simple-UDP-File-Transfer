@@ -14,7 +14,7 @@ func ReceiveFlow(addr string) error {
 	}
 	defer connection.Close()
 
-	buffer := make([]byte, 4096)
+	buffer := make([]byte, 32384)
 	sessions := make(map[uint16]*Session)
 	statuses := make(map[uint16]string)
 

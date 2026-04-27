@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const chunkSize = 1400
+const chunkSize = 16384
 
 func SendFlow(path string, addr string) error {
 	start := time.Now()
