@@ -14,7 +14,7 @@ func ReceiveFlow(addr string) error {
 	}
 	defer connection.Close()
 
-	buffer := make([]byte, 4096)
+	buffer := make([]byte, 32384)
 	sessions := make(map[uint16]*Session)
 	statuses := make(map[uint16]string)
 
@@ -23,21 +23,13 @@ func ReceiveFlow(addr string) error {
 	for {
 		connection.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
 
-		n, _, err := connection.ReadFrom(buffer)
+		n, remoteAddr, err := connection.ReadFrom(buffer)
 		if err != nil {
 			if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
 				// No packet arrived. Check completed goroutines.
 				select {
 				case result := <-doneChan:
-					if result.OK {
-						fmt.Println("file received successfully, id:", result.ID)
-						fmt.Println("receive time:", result.Duration)
-					} else {
-						fmt.Println("file assembly failed, id:", result.ID, "error:", result.Err)
-						fmt.Println("receive time before failure:", result.Duration)
-					}
-
-					delete(statuses, result.ID)
+					handleAssembleResult(connection, statuses, result)
 
 				default:
 				}
@@ -70,10 +62,32 @@ func ReceiveFlow(addr string) error {
 			statuses[id] = "receiving"
 		}
 
+		seq, err := protocol.GetSequenceNumber(packet)
+		if err != nil {
+			return err
+		}
+
 		err = session.AddPacket(packet)
 		fmt.Println("packet added to session:", id)
 		if err != nil {
 			return err
+		}
+
+		if session.FirstReceived && remoteAddr != nil {
+			if seq == session.MaxSeq+1 && !session.IsComplete() {
+				missing := session.MissingSequences(350)
+				_, err = connection.WriteTo(protocol.BuildNAKPacket(id, missing), remoteAddr)
+				if err != nil {
+					return err
+				}
+				fmt.Println("nak sent, missing:", len(missing))
+			} else {
+				_, err = connection.WriteTo(protocol.BuildACKPacket(id, session.ACKBase()), remoteAddr)
+				if err != nil {
+					return err
+				}
+				fmt.Println("ack sent, base:", session.ACKBase())
+			}
 		}
 
 		// As soon as one of the files has received all its packages,
@@ -85,7 +99,7 @@ func ReceiveFlow(addr string) error {
 
 			delete(sessions, id)
 
-			go AssembleAndSave(session, doneChan)
+			go AssembleAndSave(session, remoteAddr, doneChan)
 		}
 
 		// Cleaning up incomplete transfer sessions and late duplicates
@@ -93,15 +107,7 @@ func ReceiveFlow(addr string) error {
 
 		select {
 		case result := <-doneChan:
-			if result.OK {
-				fmt.Println("file received successfully, id:", result.ID)
-				fmt.Println("receive time:", result.Duration)
-			} else {
-				fmt.Println("file assembly failed, id:", result.ID, "error:", result.Err)
-				fmt.Println("receive time before failure:", result.Duration)
-			}
-
-			delete(statuses, result.ID)
+			handleAssembleResult(connection, statuses, result)
 
 		default:
 		}
@@ -122,4 +128,24 @@ func cleanupOldSessions(sessions map[uint16]*Session, statuses map[uint16]string
 			delete(statuses, id)
 		}
 	}
+}
+
+func handleAssembleResult(connection net.PacketConn, statuses map[uint16]string, result AssembleResult) {
+	if result.OK {
+		fmt.Println("file received successfully, id:", result.ID)
+		fmt.Println("receive time:", result.Duration)
+		if result.Addr != nil {
+			_, err := connection.WriteTo(protocol.BuildCompletePacket(result.ID), result.Addr)
+			if err != nil {
+				fmt.Println("complete send failed, id:", result.ID, "error:", err)
+			} else {
+				fmt.Println("complete sent, id:", result.ID)
+			}
+		}
+	} else {
+		fmt.Println("file assembly failed, id:", result.ID, "error:", result.Err)
+		fmt.Println("receive time before failure:", result.Duration)
+	}
+
+	delete(statuses, result.ID)
 }

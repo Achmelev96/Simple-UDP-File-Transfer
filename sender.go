@@ -1,6 +1,7 @@
 package main
 
 import (
+	"Simple_UDP_File_Transfer/protocol"
 	"crypto/md5"
 	"encoding/binary"
 	"fmt"
@@ -150,14 +151,195 @@ func Send(addr string, packets [][]byte) error {
 	}
 	defer connection.Close()
 
-	for _, packet := range packets {
-		_, err := connection.Write(packet)
-		fmt.Println("sending packet, bytes:", len(packet))
+	if len(packets) < 2 {
+		return fmt.Errorf("no packets to send")
+	}
+
+	_, err = connection.Write(packets[0])
+	fmt.Println("sending packet, bytes:", len(packets[0]))
+	if err != nil {
+		return err
+	}
+
+	windowEnabled, err := waitForFirstACK(connection)
+	if err != nil {
+		return err
+	}
+
+	if windowEnabled {
+		fmt.Println("control protocol enabled")
+		return sendWithWindow(connection, packets)
+	}
+
+	fmt.Println("control protocol not detected, sending without window")
+	return sendSimple(connection, packets)
+}
+
+func waitForFirstACK(connection net.Conn) (bool, error) {
+	buffer := make([]byte, 4096)
+	_ = connection.SetReadDeadline(time.Now().Add(200 * time.Millisecond))
+	n, err := connection.Read(buffer)
+	if err != nil {
+		if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+			return false, nil
+		}
+		return false, err
+	}
+
+	control, err := protocol.ParseControlPacket(buffer[:n])
+	if err != nil {
+		return false, nil
+	}
+
+	if control.Type == protocol.ControlTypeACK {
+		fmt.Println("ack received, base:", control.ACKBase)
+		return true, nil
+	}
+	return false, nil
+}
+
+func sendSimple(connection net.Conn, packets [][]byte) error {
+	for i := 1; i < len(packets); i++ {
+		_, err := connection.Write(packets[i])
+		fmt.Println("sending packet, bytes:", len(packets[i]))
+
 		if err != nil {
 			return err
 		}
 		time.Sleep(5 * time.Millisecond)
 	}
+	return listenForRepair(connection, packets, 20)
+}
 
+func sendWithWindow(connection net.Conn, packets [][]byte) error {
+	const windowSize = 64
+	const maxIdle = 50
+
+	maxSeq := uint32(len(packets) - 2)
+	base := uint32(1)
+	nextSeq := uint32(1)
+	idle := 0
+
+	for base <= maxSeq || nextSeq <= maxSeq {
+		for nextSeq <= maxSeq && nextSeq < base+windowSize {
+			err := sendPacketBySeq(connection, packets, nextSeq)
+			if err != nil {
+				return err
+			}
+			nextSeq++
+		}
+
+		control, err := readControl(connection, 100*time.Millisecond)
+		if err != nil {
+			return err
+		}
+		if control == nil {
+			idle++
+			if idle >= maxIdle {
+				break
+			}
+			continue
+		}
+
+		idle = 0
+		switch control.Type {
+		case protocol.ControlTypeACK:
+			fmt.Println("ack received, base:", control.ACKBase)
+			if control.ACKBase > base {
+				base = control.ACKBase
+			}
+		case protocol.ControlTypeNAK:
+			err = resendMissing(connection, packets, control.Missing)
+			if err != nil {
+				return err
+			}
+		case protocol.ControlTypeComplete:
+			fmt.Println("complete received")
+			return nil
+		}
+	}
+
+	err := sendPacketBySeq(connection, packets, maxSeq+1)
+	if err != nil {
+		return err
+	}
+
+	return listenForRepair(connection, packets, 50)
+}
+
+func listenForRepair(connection net.Conn, packets [][]byte, maxIdle int) error {
+	for idle := 0; idle < maxIdle; idle++ {
+		control, err := readControl(connection, 100*time.Millisecond)
+
+		if err != nil {
+			return err
+		}
+		if control == nil {
+			continue
+		}
+
+		switch control.Type {
+		case protocol.ControlTypeNAK:
+			fmt.Println("nak received, missing:", len(control.Missing))
+			err = resendMissing(connection, packets, control.Missing)
+			if err != nil {
+				return err
+			}
+			err = sendPacketBySeq(connection, packets, uint32(len(packets)-1))
+			if err != nil {
+				return err
+			}
+			idle = 0
+		case protocol.ControlTypeACK:
+			fmt.Println("ack received, base:", control.ACKBase)
+		case protocol.ControlTypeComplete:
+			fmt.Println("complete received")
+			return nil
+		}
+	}
+	return nil
+}
+
+func readControl(connection net.Conn, timeout time.Duration) (*protocol.ControlPacket, error) {
+	buffer := make([]byte, 4096)
+	_ = connection.SetReadDeadline(time.Now().Add(timeout))
+
+	n, err := connection.Read(buffer)
+	if err != nil {
+		if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	control, err := protocol.ParseControlPacket(buffer[:n])
+	if err != nil {
+		fmt.Println("control packet ignored:", err)
+		return nil, nil
+	}
+	return control, nil
+}
+
+func resendMissing(connection net.Conn, packets [][]byte, missing []uint32) error {
+	for _, seq := range missing {
+		err := sendPacketBySeq(connection, packets, seq)
+
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func sendPacketBySeq(connection net.Conn, packets [][]byte, seq uint32) error {
+	if int(seq) >= len(packets) {
+		return fmt.Errorf("packet seq out of range: %d", seq)
+	}
+
+	_, err := connection.Write(packets[seq])
+	fmt.Println("sending packet, bytes:", len(packets[seq]))
+	if err != nil {
+		return err
+	}
 	return nil
 }
