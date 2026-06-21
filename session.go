@@ -128,6 +128,38 @@ func (s *Session) processPending() error {
 	return nil
 }
 
+func (s *Session) ACKBase() uint32 {
+	if !s.FirstReceived {
+		return 0
+	}
+
+	ackBase := uint32(1)
+	for ackBase <= s.MaxSeq {
+		if !s.Received[ackBase] {
+			break
+		}
+		ackBase++
+	}
+	return ackBase
+}
+
+func (s *Session) MissingSequences(limit int) []uint32 {
+	missing := make([]uint32, 0)
+	if !s.FirstReceived {
+		return missing
+	}
+
+	for seq := uint32(1); seq <= s.MaxSeq; seq++ {
+		if !s.Received[seq] {
+			missing = append(missing, seq)
+			if limit > 0 && len(missing) >= limit {
+				break
+			}
+		}
+	}
+	return missing
+}
+
 func (s *Session) IsComplete() bool {
 	if !s.FirstReceived || !s.HasEnd {
 		return false

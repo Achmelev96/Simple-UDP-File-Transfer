@@ -1,6 +1,7 @@
 package main
 
 import (
+	"net"
 	"os"
 	"path/filepath"
 	"time"
@@ -11,20 +12,22 @@ type AssembleResult struct {
 	OK       bool
 	Duration time.Duration
 	Err      error
+	Addr     net.Addr
 }
 
 // AssembleAndSave Validates the file, compiles it, and saves it
 // Once everything is completed successfully, it notifies the channel about it
-func AssembleAndSave(session *Session, done chan<- AssembleResult) {
+func AssembleAndSave(session *Session, addr net.Addr, done chan<- AssembleResult) {
 	duration := time.Since(session.StartTime)
 	fileData := session.BuildFile()
 
 	err := session.ValidateMD5(fileData)
 	if err != nil {
 		done <- AssembleResult{
-			ID:  session.ID,
-			OK:  false,
-			Err: err,
+			ID:   session.ID,
+			OK:   false,
+			Err:  err,
+			Addr: addr,
 		}
 		return
 	}
@@ -32,9 +35,10 @@ func AssembleAndSave(session *Session, done chan<- AssembleResult) {
 	err = SaveReceivedFile(session.FileName, fileData)
 	if err != nil {
 		done <- AssembleResult{
-			ID:  session.ID,
-			OK:  false,
-			Err: err,
+			ID:   session.ID,
+			OK:   false,
+			Err:  err,
+			Addr: addr,
 		}
 		return
 	}
@@ -44,6 +48,7 @@ func AssembleAndSave(session *Session, done chan<- AssembleResult) {
 		OK:       true,
 		Duration: duration,
 		Err:      err,
+		Addr:     addr,
 	}
 }
 
