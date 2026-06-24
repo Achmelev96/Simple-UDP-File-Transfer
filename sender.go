@@ -27,14 +27,14 @@ func SendFlow(path string, addr string) error {
 	packets := BuildPackets(id, name, chunks, md5)
 
 	fmt.Println("packets built:", len(packets))
-	err = Send(addr, packets)
+	logger := NewTransferLogger()
+	err = Send(addr, packets, logger)
 	if err != nil {
 		return err
 	}
 
-	// send timer
+	logger.PrintSendSummary(id, time.Since(start))
 	fmt.Println("file sent successfully:", name)
-	fmt.Println("send time:", time.Since(start))
 
 	return nil
 }
@@ -144,7 +144,7 @@ func BuildDataPacket(id uint16, seq uint32, chunk []byte) []byte {
 	return packet
 }
 
-func Send(addr string, packets [][]byte) error {
+func Send(addr string, packets [][]byte, logger *TransferLogger) error {
 	connection, err := net.Dial("udp", addr)
 	if err != nil {
 		return err
@@ -156,26 +156,26 @@ func Send(addr string, packets [][]byte) error {
 	}
 
 	_, err = connection.Write(packets[0])
-	fmt.Println("sending packet, bytes:", len(packets[0]))
+	logger.LogDataPacket(directionSent, packets[0])
 	if err != nil {
 		return err
 	}
 
-	windowEnabled, err := waitForFirstACK(connection)
+	windowEnabled, err := waitForFirstACK(connection, logger)
 	if err != nil {
 		return err
 	}
+
+	id, _ := protocol.GetTransmissionID(packets[0])
+	logger.SetWindowEnabled(id, windowEnabled)
 
 	if windowEnabled {
-		fmt.Println("control protocol enabled")
-		return sendWithWindow(connection, packets)
+		return sendWithWindow(connection, packets, logger)
 	}
-
-	fmt.Println("control protocol not detected, sending without window")
-	return sendSimple(connection, packets)
+	return sendSimple(connection, packets, logger)
 }
 
-func waitForFirstACK(connection net.Conn) (bool, error) {
+func waitForFirstACK(connection net.Conn, logger *TransferLogger) (bool, error) {
 	buffer := make([]byte, 4096)
 	_ = connection.SetReadDeadline(time.Now().Add(200 * time.Millisecond))
 	n, err := connection.Read(buffer)
@@ -191,27 +191,27 @@ func waitForFirstACK(connection net.Conn) (bool, error) {
 		return false, nil
 	}
 
+	logger.LogControlPacket(directionReceived, control)
 	if control.Type == protocol.ControlTypeACK {
-		fmt.Println("ack received, base:", control.ACKBase)
 		return true, nil
 	}
 	return false, nil
 }
 
-func sendSimple(connection net.Conn, packets [][]byte) error {
+func sendSimple(connection net.Conn, packets [][]byte, logger *TransferLogger) error {
 	for i := 1; i < len(packets); i++ {
 		_, err := connection.Write(packets[i])
-		fmt.Println("sending packet, bytes:", len(packets[i]))
+		logger.LogDataPacket(directionSent, packets[i])
 
 		if err != nil {
 			return err
 		}
 		time.Sleep(5 * time.Millisecond)
 	}
-	return listenForRepair(connection, packets, 20)
+	return listenForRepair(connection, packets, 20, logger)
 }
 
-func sendWithWindow(connection net.Conn, packets [][]byte) error {
+func sendWithWindow(connection net.Conn, packets [][]byte, logger *TransferLogger) error {
 	const windowSize = 64
 	const maxIdle = 50
 
@@ -220,23 +220,27 @@ func sendWithWindow(connection net.Conn, packets [][]byte) error {
 	nextSeq := uint32(1)
 	idle := 0
 
-	for base <= maxSeq || nextSeq <= maxSeq {
+	for base <= maxSeq {
 		for nextSeq <= maxSeq && nextSeq < base+windowSize {
-			err := sendPacketBySeq(connection, packets, nextSeq)
+			err := sendPacketBySeq(connection, packets, nextSeq, logger)
 			if err != nil {
 				return err
 			}
 			nextSeq++
 		}
 
-		control, err := readControl(connection, 100*time.Millisecond)
+		control, err := readControl(connection, 100*time.Millisecond, logger)
 		if err != nil {
 			return err
 		}
 		if control == nil {
 			idle++
 			if idle >= maxIdle {
-				break
+				if err := resendWindow(connection, packets, base, nextSeq, logger); err != nil {
+					return err
+				}
+				idle = 0
+
 			}
 			continue
 		}
@@ -244,32 +248,42 @@ func sendWithWindow(connection net.Conn, packets [][]byte) error {
 		idle = 0
 		switch control.Type {
 		case protocol.ControlTypeACK:
-			fmt.Println("ack received, base:", control.ACKBase)
 			if control.ACKBase > base {
 				base = control.ACKBase
 			}
 		case protocol.ControlTypeNAK:
-			err = resendMissing(connection, packets, control.Missing)
+			err = resendMissing(connection, packets, control.Missing, logger)
 			if err != nil {
 				return err
 			}
 		case protocol.ControlTypeComplete:
-			fmt.Println("complete received")
 			return nil
 		}
 	}
 
-	err := sendPacketBySeq(connection, packets, maxSeq+1)
+	err := sendPacketBySeq(connection, packets, maxSeq+1, logger)
 	if err != nil {
 		return err
 	}
 
-	return listenForRepair(connection, packets, 50)
+	return listenForRepair(connection, packets, 50, logger)
 }
 
-func listenForRepair(connection net.Conn, packets [][]byte, maxIdle int) error {
+// The window from which packets were sent but not received
+// Packets outside this window cannot be requested
+func resendWindow(connection net.Conn, packets [][]byte, base uint32, nextSeq uint32, logger *TransferLogger) error {
+	for seq := base; seq < nextSeq; seq++ {
+		if err := sendPacketBySeq(connection, packets, seq, logger); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func listenForRepair(connection net.Conn, packets [][]byte, maxIdle int, logger *TransferLogger) error {
+
 	for idle := 0; idle < maxIdle; idle++ {
-		control, err := readControl(connection, 100*time.Millisecond)
+		control, err := readControl(connection, 100*time.Millisecond, logger)
 
 		if err != nil {
 			return err
@@ -280,27 +294,25 @@ func listenForRepair(connection net.Conn, packets [][]byte, maxIdle int) error {
 
 		switch control.Type {
 		case protocol.ControlTypeNAK:
-			fmt.Println("nak received, missing:", len(control.Missing))
-			err = resendMissing(connection, packets, control.Missing)
+			err = resendMissing(connection, packets, control.Missing, logger)
+
 			if err != nil {
 				return err
 			}
-			err = sendPacketBySeq(connection, packets, uint32(len(packets)-1))
+			err = sendPacketBySeq(connection, packets, uint32(len(packets)-1), logger)
 			if err != nil {
 				return err
 			}
 			idle = 0
-		case protocol.ControlTypeACK:
-			fmt.Println("ack received, base:", control.ACKBase)
+
 		case protocol.ControlTypeComplete:
-			fmt.Println("complete received")
 			return nil
 		}
 	}
 	return nil
 }
 
-func readControl(connection net.Conn, timeout time.Duration) (*protocol.ControlPacket, error) {
+func readControl(connection net.Conn, timeout time.Duration, logger *TransferLogger) (*protocol.ControlPacket, error) {
 	buffer := make([]byte, 4096)
 	_ = connection.SetReadDeadline(time.Now().Add(timeout))
 
@@ -317,12 +329,13 @@ func readControl(connection net.Conn, timeout time.Duration) (*protocol.ControlP
 		fmt.Println("control packet ignored:", err)
 		return nil, nil
 	}
+	logger.LogControlPacket(directionReceived, control)
 	return control, nil
 }
 
-func resendMissing(connection net.Conn, packets [][]byte, missing []uint32) error {
+func resendMissing(connection net.Conn, packets [][]byte, missing []uint32, logger *TransferLogger) error {
 	for _, seq := range missing {
-		err := sendPacketBySeq(connection, packets, seq)
+		err := sendPacketBySeq(connection, packets, seq, logger)
 
 		if err != nil {
 			return err
@@ -331,13 +344,13 @@ func resendMissing(connection net.Conn, packets [][]byte, missing []uint32) erro
 	return nil
 }
 
-func sendPacketBySeq(connection net.Conn, packets [][]byte, seq uint32) error {
+func sendPacketBySeq(connection net.Conn, packets [][]byte, seq uint32, logger *TransferLogger) error {
 	if int(seq) >= len(packets) {
 		return fmt.Errorf("packet seq out of range: %d", seq)
 	}
 
 	_, err := connection.Write(packets[seq])
-	fmt.Println("sending packet, bytes:", len(packets[seq]))
+	logger.LogDataPacket(directionSent, packets[seq])
 	if err != nil {
 		return err
 	}
