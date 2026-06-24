@@ -10,9 +10,10 @@ import (
 )
 
 type Session struct {
-	ID       uint16
-	FileName string
-	MaxSeq   uint32
+	ID             uint16
+	FileName       string
+	MaxSeq         uint32
+	HighestDataSeq uint32
 
 	Chunks   map[uint32][]byte
 	Received map[uint32]bool
@@ -102,6 +103,9 @@ func (s *Session) AddPacket(packet []byte) error {
 
 	s.Chunks[dataSeq] = data
 	s.Received[dataSeq] = true
+	if dataSeq > s.HighestDataSeq {
+		s.HighestDataSeq = dataSeq
+	}
 	return nil
 }
 
@@ -125,6 +129,9 @@ func (s *Session) processPending() error {
 
 		s.Chunks[dataSeq] = data
 		s.Received[dataSeq] = true
+		if dataSeq > s.HighestDataSeq {
+			s.HighestDataSeq = dataSeq
+		}
 		delete(s.Pending, seq)
 	}
 
@@ -147,12 +154,20 @@ func (s *Session) ACKBase() uint32 {
 }
 
 func (s *Session) MissingSequences(limit int) []uint32 {
+	return s.MissingSequencesUpTo(s.MaxSeq, limit)
+}
+
+func (s *Session) MissingSequencesUpTo(maxSeen uint32, limit int) []uint32 {
 	missing := make([]uint32, 0)
 	if !s.FirstReceived {
 		return missing
 	}
 
-	for seq := uint32(1); seq <= s.MaxSeq; seq++ {
+	if maxSeen > s.MaxSeq {
+		maxSeen = s.MaxSeq
+	}
+
+	for seq := uint32(1); seq <= maxSeen; seq++ {
 		if !s.Received[seq] {
 			missing = append(missing, seq)
 			if limit > 0 && len(missing) >= limit {

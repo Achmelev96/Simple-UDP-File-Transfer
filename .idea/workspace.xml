@@ -5,10 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="71f9d00b-be6e-4d02-9004-bacc31e0f758" name="Changes" comment="session.go:&#10;- new fields for remote Addr and LastRepair&#10;&#10;receiver.go:&#10;- Manual allocation of an extended buffer&#10;- A new method for periodic NAK requests&#10;- Move some configuration parameters into constants">
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_26_04_2026_18_24_[Changes]/shelved.patch" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_26_04_2026_18_24__Changes_.xml" beforeDir="false" />
+      <change afterPath="$PROJECT_DIR$/logger.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/testdata/test3GB.mega2" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/testdata/test4MB.mega2" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/receiver.go" beforeDir="false" afterPath="$PROJECT_DIR$/receiver.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sender.go" beforeDir="false" afterPath="$PROJECT_DIR$/sender.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/session.go" beforeDir="false" afterPath="$PROJECT_DIR$/session.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
