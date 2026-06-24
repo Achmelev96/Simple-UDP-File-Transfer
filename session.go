@@ -154,7 +154,14 @@ func (s *Session) ACKBase() uint32 {
 }
 
 func (s *Session) MissingSequences(limit int) []uint32 {
-	return s.MissingSequencesUpTo(s.MaxSeq, limit)
+	return s.MissingSequencesUpTo(s.repairUpperBound(), limit)
+}
+
+func (s *Session) repairUpperBound() uint32 {
+	if s.HasEnd {
+		return s.MaxSeq
+	}
+	return s.HighestDataSeq
 }
 
 func (s *Session) MissingSequencesUpTo(maxSeen uint32, limit int) []uint32 {

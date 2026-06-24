@@ -4,19 +4,20 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="71f9d00b-be6e-4d02-9004-bacc31e0f758" name="Changes" comment="session.go:&#10;- new fields for remote Addr and LastRepair&#10;&#10;receiver.go:&#10;- Manual allocation of an extended buffer&#10;- A new method for periodic NAK requests&#10;- Move some configuration parameters into constants">
-      <change afterPath="$PROJECT_DIR$/logger.go" afterDir="false" />
+    <list default="true" id="71f9d00b-be6e-4d02-9004-bacc31e0f758" name="Changes" comment="logger for best output">
       <change afterPath="$PROJECT_DIR$/testdata/test3GB.mega2" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/testdata/test4MB.mega2" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/receiver.go" beforeDir="false" afterPath="$PROJECT_DIR$/receiver.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sender.go" beforeDir="false" afterPath="$PROJECT_DIR$/sender.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/session.go" beforeDir="false" afterPath="$PROJECT_DIR$/session.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="EmbeddingIndexingInfo">
+    <option name="cachedIndexableFilesCount" value="23" />
+    <option name="fileBasedEmbeddingIndicesEnabled" value="true" />
   </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
@@ -41,6 +42,10 @@
     &quot;accountId&quot;: &quot;03094e1b-d851-455e-9d48-da28af7ac39c&quot;
   }
 }</component>
+  <component name="McpProjectServerCommands">
+    <commands />
+    <urls />
+  </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 0,
   &quot;fromUser&quot;: false
@@ -53,29 +58,30 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;DefaultGoTemplateProperty&quot;: &quot;Go File&quot;,
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.GoLinterPluginOnboardingV2&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.GoLinterPluginStorageMigration&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.go.analysis.ui.options.defaults&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.go.formatter.settings.were.checked&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.go.modules.go.list.on.any.changes.was.set&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
-    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;testing&quot;,
-    &quot;go.sdk.automatically.set&quot;: &quot;true&quot;,
-    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/home/zoizan&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;onboarding.tips.debug.path&quot;: &quot;D:/Prj/go/my/Simple UDP File Transfer/main.go&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "DefaultGoTemplateProperty": "Go File",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.GoLinterPluginOnboardingV2": "true",
+    "RunOnceActivity.GoLinterPluginStorageMigration": "true",
+    "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.go.analysis.ui.options.defaults": "true",
+    "RunOnceActivity.go.formatter.settings.were.checked": "true",
+    "RunOnceActivity.go.modules.go.list.on.any.changes.was.set": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "git-widget-placeholder": "testing",
+    "go.sdk.automatically.set": "true",
+    "ignore.virus.scanning.warn.message": "true",
+    "last_opened_file_path": "/home/zoizan",
+    "nodejs_package_manager_path": "npm",
+    "onboarding.tips.debug.path": "D:/Prj/go/my/Simple UDP File Transfer/main.go",
+    "settings.editor.selected.configurable": "ml.llm.LLMConfigurable"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="D:\Prj\go\my\SimpleUDPFileTransfer\docs" />
@@ -119,6 +125,7 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="ver 2 with support for control messages and &quot;sliding window&quot;&#10;&#10;assembler.go: &#10;&quot;addr&quot; field has been added to processing channels&#10;&#10;receiver.go&#10;1. Checking the readiness of received files has been moved to a separate method&#10;2. ACK/NACK feedback&#10;&#10;session.go:&#10;1. ACK implementation&#10;2. Logic for finding missing packets for NAC&#10;&#10;sender.go:&#10;1. Control Msg logic added&#10;1.1 Control msg reader&#10;1.2 Timeout for ACKs&#10;1.3 Send with/without &quot;sliding window&quot;&#10;1.4 Resend missing packets &#10;&#10;new file control.go:&#10;1. Stuct for Contol msg type&#10;2. Builder/Parser for control msg" />
     <MESSAGE value="session.go:&#10;- new fields for remote Addr and LastRepair&#10;&#10;receiver.go:&#10;- Manual allocation of an extended buffer&#10;- A new method for periodic NAK requests&#10;- Move some configuration parameters into constants" />
-    <option name="LAST_COMMIT_MESSAGE" value="session.go:&#10;- new fields for remote Addr and LastRepair&#10;&#10;receiver.go:&#10;- Manual allocation of an extended buffer&#10;- A new method for periodic NAK requests&#10;- Move some configuration parameters into constants" />
+    <MESSAGE value="logger for best output" />
+    <option name="LAST_COMMIT_MESSAGE" value="logger for best output" />
   </component>
 </project>
