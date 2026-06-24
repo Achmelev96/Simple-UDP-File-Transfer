@@ -7,12 +7,24 @@ import (
 	"time"
 )
 
+const (
+	receiverSocketReadBuffer = 4 << 20                // Buffer size
+	repairRequestInterval    = 500 * time.Millisecond // Timer for NAK
+	repairRequestLimit       = 350                    // NAK limitation
+)
+
 func ReceiveFlow(addr string) error {
 	connection, err := net.ListenPacket("udp", addr)
 	if err != nil {
 		return err
 	}
 	defer connection.Close()
+
+	if udpConn, ok := connection.(*net.UDPConn); ok {
+		if err := udpConn.SetReadBuffer(receiverSocketReadBuffer); err != nil { // set bigger buffer
+			fmt.Println("set read buffer failed:", err)
+		}
+	}
 
 	buffer := make([]byte, 32384)
 	sessions := make(map[uint16]*Session)
@@ -33,6 +45,7 @@ func ReceiveFlow(addr string) error {
 
 				default:
 				}
+				requestMissingPackets(connection, sessions, statuses)
 
 				continue
 			}
@@ -61,6 +74,7 @@ func ReceiveFlow(addr string) error {
 			sessions[id] = session
 			statuses[id] = "receiving"
 		}
+		session.RemoteAddr = remoteAddr
 
 		seq, err := protocol.GetSequenceNumber(packet)
 		if err != nil {
@@ -75,7 +89,7 @@ func ReceiveFlow(addr string) error {
 
 		if session.FirstReceived && remoteAddr != nil {
 			if seq == session.MaxSeq+1 && !session.IsComplete() {
-				missing := session.MissingSequences(350)
+				missing := session.MissingSequences(repairRequestLimit)
 				_, err = connection.WriteTo(protocol.BuildNAKPacket(id, missing), remoteAddr)
 				if err != nil {
 					return err
@@ -104,6 +118,7 @@ func ReceiveFlow(addr string) error {
 
 		// Cleaning up incomplete transfer sessions and late duplicates
 		cleanupOldSessions(sessions, statuses, 10*time.Second)
+		requestMissingPackets(connection, sessions, statuses)
 
 		select {
 		case result := <-doneChan:
@@ -148,4 +163,31 @@ func handleAssembleResult(connection net.PacketConn, statuses map[uint16]string,
 	}
 
 	delete(statuses, result.ID)
+}
+
+// NAK msg
+func requestMissingPackets(connection net.PacketConn, sessions map[uint16]*Session, statuses map[uint16]string) {
+	now := time.Now()
+
+	for id, session := range sessions {
+		if statuses[id] != "receiving" || !session.FirstReceived || session.RemoteAddr == nil || session.IsComplete() {
+			continue
+		}
+		if !session.LastRepair.IsZero() && now.Sub(session.LastRepair) < repairRequestInterval {
+			continue
+		}
+
+		missing := session.MissingSequences(repairRequestLimit)
+		if len(missing) == 0 {
+			continue
+		}
+
+		_, err := connection.WriteTo(protocol.BuildNAKPacket(id, missing), session.RemoteAddr)
+		if err != nil {
+			fmt.Println("periodic nak failed, id:", id, "error:", err)
+			continue
+		}
+		session.LastRepair = now
+		fmt.Println("periodic nak sent, id:", id, "missing:", len(missing))
+	}
 }

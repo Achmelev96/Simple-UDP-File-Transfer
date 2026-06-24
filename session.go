@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"crypto/md5"
 	"fmt"
+	"net"
 	"time"
 )
 
@@ -21,9 +22,11 @@ type Session struct {
 
 	FirstReceived bool
 
-	Pending   map[uint32][]byte // before fist packet
-	LastSeen  time.Time         // timer for cleanup
-	StartTime time.Time         // timer for receiving
+	Pending    map[uint32][]byte // before fist packet
+	LastSeen   time.Time         // timer for cleanup
+	StartTime  time.Time         // timer for receiving
+	RemoteAddr net.Addr          // address for ACK/NAK
+	LastRepair time.Time         // timer for NAK
 }
 
 func NewSession(id uint16) *Session {
